@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unit Converter</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <h1>Unit Converter</h1>
+        <div class="intro-note">
+            <p>Welcome to the Dimensional Analysis Machine! (That's fancy talk for "unit converter".) Convert between standard units like meters, kilograms, and liters, or explore fictional units from your favorite sci-fi and fantasy universes, such as light-years (Star Wars), Nuka-Cola caps (Fallout), and the mystical Degrees Midichlorian. Select a category, enter a value, and see the magic happen!</p>
+        </div>
+        
+        <div class="converter-box">
+            <select id="category" class="category-select">
+                <option value="length">Length</option>
+                <option value="weight">Weight</option>
+                <option value="temperature">Temperature</option>
+                <option value="volume">Volume</option>
+            </select>
+
+            <div class="input-group">
+                <input type="number" id="inputValue" placeholder="Enter value" class="value-input">
+                <select id="fromUnit" class="unit-select"></select>
+                <button id="swapButton" class="swap-btn">↔</button>
+            </div>
+
+            <div class="equals">=</div>
+
+            <div class="input-group">
+                <input type="number" id="outputValue" readonly class="value-input">
+                <select id="toUnit" class="unit-select"></select>
+            </div>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
