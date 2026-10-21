@@ -1,8 +1,19 @@
 /* ============================================================
-   Nerdy Unit Converter — the slide rule
+   styles.css — Nerdy Unit Converter, the slide rule
+   ------------------------------------------------------------
    Day (default): warm paper, ink and burgundy.
-   Night: "cockpit at night" — warm graphite with red night lighting.
+   Night: "cockpit at night", warm graphite with red night lighting
+   (red light is what pilots and astronomers use to keep night vision).
    Typeface: B612, designed for aircraft cockpit displays.
+
+   Theming: every colour is a token (--paper, --ink, --accent …) defined
+   for day on :root and overridden for night on :root[data-theme="dark"]
+   (theme.js sets the attribute). Components only ever use the tokens,
+   so a new colour belongs in BOTH token blocks.
+
+   Shared by index.html and references.html. Sections, in order:
+   tokens · base · masthead · categories · sentence · unit picker ·
+   tags · the rule · footnotes · references page · phone · motion.
    ============================================================ */
 
 @import url('https://fonts.googleapis.com/css2?family=B612:ital,wght@0,400;0,700;1,400&family=B612+Mono:wght@400;700&display=swap');
@@ -323,7 +334,16 @@ h1 a { color: inherit; text-decoration: none; }
     white-space: nowrap;
 }
 
-/* === THE RULE === */
+/* === THE RULE ===
+   Markup (index.html; ticks, labels and marks are added by rule.js):
+     .rule-face              the boxwood-coloured body of the rule
+       .rule-edge-top/bottom unit names at the left end (hidden on phones)
+       .rule-strip           the band between the scales (landmarks go in .rule-strip-inner)
+       .rule-track           where the scales live: left/right insets match .rule-strip-inner
+         .rule-scale-upper   "from" unit: ticks rise from the top edge of the strip
+         .rule-scale-lower   "to" unit: ticks hang down from the bottom edge of the strip
+         .rule-cursor        the red hairline at the value
+   rule.js positions everything with left: N%, so the rule scales with its width. */
 .rule { margin: 0; }
 .rule-face {
     position: relative;
@@ -346,7 +366,7 @@ h1 a { color: inherit; text-decoration: none; }
 .rule-edge-bottom { bottom: 16px; }
 .rule-track {
     position: absolute;
-    left: 120px;
+    left: 120px;    /* room for the unit names; keep in step with .rule-strip-inner */
     right: 48px;
     top: 0;
     bottom: 0;
@@ -405,6 +425,7 @@ h1 a { color: inherit; text-decoration: none; }
     border-right: 2px solid var(--accent);
 }
 .rule-cursor {
+    /* A faint 16px band (like the glass cursor of a real slide rule) with the 2px hairline as ::after. */
     position: absolute;
     top: -10px;
     bottom: -10px;
@@ -513,7 +534,9 @@ h1 a { color: inherit; text-decoration: none; }
 .ref-unit .tag { margin-left: 8px; vertical-align: 1px; }
 .ref-value { font-family: var(--font-mono); color: var(--accent) !important; white-space: nowrap; }
 
-/* === PHONE === */
+/* === PHONE ===
+   Under 640px: the sentence wraps onto two lines, the rule drops its edge labels for a
+   legend underneath, actions become full-width buttons, and tables stack into cards. */
 @media (max-width: 640px) {
     body { padding: 24px 16px 48px; }
     .page { gap: 24px; }
@@ -577,7 +600,8 @@ h1 a { color: inherit; text-decoration: none; }
     .ref-value { white-space: normal; }
 }
 
-/* === MOTION === */
+/* === MOTION ===
+   The only animation is the hairline sliding to a new value; switched off on request. */
 @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation: none !important; transition: none !important; }
 }

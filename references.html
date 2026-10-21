@@ -42,10 +42,16 @@
 
     <script src="units.js"></script>
     <script>
+        /*
+         * References page: one table per category, built from CATEGORIES in units.js, so it
+         * always matches the converter. The filter buttons hide rows by unit `kind` and hide
+         * any category (and its jump link) left with no visible rows.
+         */
         const body = document.getElementById('refBody');
         const jump = document.getElementById('refJump');
         const KIND_TAGS = { standard: '', nerdy: 'Nerdy', fictional: '' };
 
+        // Label next to a unit's name: its universe, or "Nerdy". Standard units get none.
         function tagEl(unit) {
             const text = unitTag(unit) || KIND_TAGS[unit.kind];
             if (!text) return null;
@@ -97,6 +103,8 @@
                 const tag = tagEl(unit);
                 if (tag) name.appendChild(tag);
 
+                // "Equals" column: the unit's size in base units. Formula units say so instead,
+                // and currencies are shown in their universe's smallest coin (1 Galleon = 493 Knuts).
                 const val = document.createElement('td');
                 val.className = 'ref-value';
                 if (!unit.size) {

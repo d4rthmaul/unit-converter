@@ -1,16 +1,37 @@
 /*
- * Unit data for the Nerdy Unit Converter.
- * Shared by the converter (index.html) and the reference page (references.html).
+ * units.js — every unit, its value, and its source
+ * =================================================
+ * The single source of truth for the site. The converter (index.html + script.js + rule.js)
+ * and the reference page (references.html) are both built from CATEGORIES below, so a unit
+ * added here appears everywhere automatically.
  *
- * Each linear unit has a `size`: how many of the category's base unit one of it equals.
- * Non-linear units (temperature scales, warp factors) define toBase/fromBase instead;
- * `domain` limits the values a non-linear unit is defined for.
- * Every unit cites a source: [title, url].
- * `kind`: "standard" (real, official), "nerdy" (real but humorous), "fictional" (from a fictional universe).
- * Currency units also have a `universe`: conversions are only allowed within the same universe.
- * Fictional units have a `tag` naming their universe (shown as a label in the unit picker).
+ * CATEGORIES = { <categoryKey>: { label, base, note?, units: { <unitKey>: unit } } }
+ *   label   name shown on the category button and reference page
+ *   base    the base unit everything converts through, in words ("meters")
+ *   note    optional sentence shown under the footnotes (e.g. how currency conversion works)
+ *
+ * Unit fields
+ *   size        LINEAR units: how many base units one of this unit is (1 smoot = 1.7018 m).
+ *   toBase      NON-LINEAR units instead of `size`: functions converting a value to and from
+ *   fromBase    the base unit (temperature offsets, warp-factor curves). Return NaN when a
+ *               value has no answer; the site then shows a dash and the unit's `limit`.
+ *   domain      optional [min, max] of values a non-linear formula is defined for (TNG warp).
+ *   domainNote  label drawn on the slide rule where the domain ends.
+ *   limit       sentence explaining why a value is out of range.
+ *   kind        "standard" (real and official), "nerdy" (real but humorous) or
+ *               "fictional" (from a fictional universe). Drives grouping and filters.
+ *   label       display name, when the key with underscores turned into spaces isn't right.
+ *               Write it in the plural; singularLabel() handles "1 smoot".
+ *   tag         universe of a fictional unit ("Star Trek"), shown as a small label.
+ *   universe    CURRENCY only: units convert only within the same universe.
+ *   desc        one or two sentences shown in the footnotes and on the reference page.
+ *   source      [title, url] of the best available source. Every unit must have one.
+ *
+ * Adding a unit: copy a similar line, set `size` in the category's base unit, write `desc`,
+ * add or reuse a SRC entry, and check it on references.html.
  */
 
+/** Sources, shared by the units that cite them: [title shown on the site, url]. */
 const SRC = {
     nist: ["NIST Guide to the SI, Appendix B: Conversion Factors",
         "https://www.nist.gov/pml/special-publication-811/nist-guide-si-appendix-b-conversion-factors"],
@@ -35,6 +56,7 @@ const SRC = {
     dnd: ["D&D 5e SRD — Equipment: Coins (Roll20 Compendium)",
         "https://roll20.net/compendium/dnd5e/Rules:Equipment"],
     barenziah: ["Stone of Barenziah — Skyrim Wiki", "https://skyrim.gamepedia.com/Stone_of_Barenziah"],
+    // Not linked on the site: evidence that Skyrim never names its weight unit (see Stones of Barenziah).
     skyrimWeight: ["Skyrim: Carry Weight — UESP", "https://content1.uesp.net/wiki/Skyrim:Encumbrance"],
     celsius: ["Celsius (Wikipedia)", "https://en.wikipedia.org/wiki/Celsius"],
     fahrenheit: ["Fahrenheit (Wikipedia)", "https://en.wikipedia.org/wiki/Fahrenheit"],
@@ -59,6 +81,7 @@ const SRC = {
     midichlorian: ["Midi-chlorian — Wookieepedia (canon)", "https://starwars.fandom.com/wiki/Midi-chlorian"],
 };
 
+// Exact constants used by several units.
 const LB = 0.45359237;          // kg, exact
 const MILE = 1609.344;          // m, exact
 const C = 299792458;            // m/s, exact
@@ -116,6 +139,7 @@ const CATEGORIES = {
         },
     },
 
+    // Temperature scales have offsets (0 °C isn't 0 °F), so they all use toBase/fromBase.
     temperature: {
         label: "Temperature",
         base: "celsius",
@@ -164,6 +188,8 @@ const CATEGORIES = {
             mach:                  { label: "Mach", size: 343, kind: "standard", desc: "Speed of sound, ~343 m/s in dry air at 20 °C (it varies with temperature).", source: SRC.sound },
             speed_of_light:        { label: "speed of light (c)", size: C, kind: "standard", desc: "c, exactly 299,792,458 m/s.", source: SRC.speedOfLight },
             deloreans:             { label: "DeLoreans", tag: "Back to the Future", size: 88 * MILE / 3600, kind: "fictional", desc: "Back to the Future: 88 mph, the speed the DeLorean needs to time travel.", source: SRC.delorean },
+            // Warp factors are curves, not ratios. TOS: v = w³·c. TNG: v = w^(10/3)·c up to
+            // warp 9; Memory Alpha gives no formula between 9 and the infinite warp 10.
             warp_factor_tos:       { tag: "Star Trek", label: "warp factor (TOS scale)", kind: "fictional",
                                      toBase: w => Math.pow(w, 3) * C,
                                      fromBase: v => Math.cbrt(v / C),
@@ -207,6 +233,8 @@ const CATEGORIES = {
         },
     },
 
+    // Each universe's coins share a `size` scale whose smallest coin is 1 (cp, Knut, cap).
+    // Sizes are only comparable within a universe; script.js keeps "to" in the same one.
     currency: {
         label: "Currency",
         base: "(per universe)",
@@ -215,7 +243,7 @@ const CATEGORIES = {
             copper_pieces:   { size: 1, universe: "D&D", kind: "fictional", desc: "D&D 5e: 1 cp. 10 cp = 1 sp.", source: SRC.dnd },
             silver_pieces:   { size: 10, universe: "D&D", kind: "fictional", desc: "D&D 5e: 10 cp. 10 sp = 1 gp.", source: SRC.dnd },
             electrum_pieces: { size: 50, universe: "D&D", kind: "fictional", desc: "D&D 5e: worth half a gold piece.", source: SRC.dnd },
-            gold_pieces:     { tag: "D&D", size: 100, universe: "D&D", kind: "fictional", desc: "D&D 5e: 100 cp. 10 gp = 1 pp.", source: SRC.dnd },
+            gold_pieces:     { size: 100, universe: "D&D", kind: "fictional", desc: "D&D 5e: 100 cp. 10 gp = 1 pp.", source: SRC.dnd },
             platinum_pieces: { size: 1000, universe: "D&D", kind: "fictional", desc: "D&D 5e: 10 gp.", source: SRC.dnd },
             knuts:           { label: "Knuts", size: 1, universe: "Harry Potter", kind: "fictional", desc: "Bronze coin. 29 Knuts = 1 Sickle.", source: SRC.hpWizard },
             sickles:         { label: "Sickles", size: 29, universe: "Harry Potter", kind: "fictional", desc: "Silver coin. 17 Sickles = 1 Galleon.", source: SRC.hpWizard },
@@ -240,19 +268,27 @@ const CATEGORIES = {
     },
 };
 
+// ------------------------------------------------------------ Shared helpers
+// Used by script.js, rule.js and references.html.
+
 /** The small label shown with a unit: its universe, or "Nerdy" for real-but-humorous units. */
 function unitTag(unit) {
     return unit.tag || unit.universe || (unit.kind === "nerdy" ? "Nerdy" : "");
 }
 
-/** Human-readable label for a unit key. */
+/** Display name for a unit: its `label`, or its key with underscores as spaces. */
 function unitLabel(key, unit) {
     return (unit && unit.label) || key.replace(/_/g, " ");
 }
 
-/** Format a number for display; uses scientific notation for very large/small values. */
+/** Superscript digits, for powers of ten like 10¹⁶. */
 const SUPERSCRIPT = { '-': '⁻', '0': '⁰', '1': '¹', '2': '²', '3': '³', '4': '⁴', '5': '⁵', '6': '⁶', '7': '⁷', '8': '⁸', '9': '⁹' };
 
+/**
+ * Format a number for display. Very large or small values (≥ 1 billion, < 0.0001) use
+ * scientific notation with superscripts ("4.0113 × 10¹⁶"); others get commas and fewer
+ * decimals as they grow.
+ */
 function formatNumber(n) {
     if (n === 0) return '0';
     const abs = Math.abs(n);
@@ -267,7 +303,12 @@ function formatNumber(n) {
     return n.toLocaleString('en-US', { maximumFractionDigits: digits });
 }
 
-/** A unit's label in the singular, for sentences like "1 smoot = 1.7018 meters". */
+/**
+ * A unit's label in the singular, for sentences like "1 smoot = 1.7018 meters".
+ * Only the last word before any "(…)" or " per …" changes ("gallons (US)" → "gallon (US)",
+ * "meters per second" → "meter per second"). Irregular words are listed in SINGULAR_WORDS;
+ * otherwise "-ies" becomes "-y" and a trailing "s" is dropped (but not from "-ss" or "-us").
+ */
 const SINGULAR_WORDS = {
     feet: 'foot', inches: 'inch', 'yéni': 'yén', rangar: 'ranga', denarii: 'denarius',
     'Stones of Barenziah': 'Stone of Barenziah', 'pounds sterling': 'pound sterling',
