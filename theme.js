@@ -1,5 +1,5 @@
 /*
- * Light / dark ("terminal") theme.
+ * Day / night theme. Night is the "cockpit at night" palette.
  * Loaded in <head> so the right theme is applied before the page paints.
  * Default: follow the visitor's system setting. A click on the toggle is remembered on this device.
  */
@@ -22,10 +22,8 @@
         var buttons = document.querySelectorAll('[data-theme-toggle]');
         buttons.forEach(function (btn) {
             var dark = theme === 'dark';
-            btn.setAttribute('aria-pressed', String(dark));
-            btn.setAttribute('aria-label', dark ? 'Switch to light mode' : 'Switch to terminal (dark) mode');
             var label = btn.querySelector('.theme-toggle-label');
-            if (label) label.textContent = dark ? 'Light mode' : 'Terminal mode';
+            if (label) label.textContent = dark ? 'Switch to day mode' : 'Switch to night mode';
         });
     }
 

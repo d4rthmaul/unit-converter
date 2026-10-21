@@ -1,36 +1,36 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const chipsEl = document.getElementById('categoryChips');
+    const nav = document.getElementById('categoryNav');
     const inputValue = document.getElementById('inputValue');
+    const resultEl = document.getElementById('result');
+    const ruleEl = document.getElementById('rule');
+    const sourcesEl = document.getElementById('sources');
     const swapButton = document.getElementById('swapButton');
-    const resultNumber = document.getElementById('resultNumber');
-    const resultUnit = document.getElementById('resultUnit');
-    const resultSentence = document.getElementById('resultSentence');
     const copyButton = document.getElementById('copyButton');
-    const copyLabel = document.getElementById('copyLabel');
+    const copyStatus = document.getElementById('copyStatus');
     const randomButton = document.getElementById('randomButton');
-    const unitInfo = document.getElementById('unitInfo');
     const unitCount = document.getElementById('unitCount');
 
-    const KIND_LABELS = { standard: 'Standard', nerdy: 'Nerdy (but real)', fictional: 'Fictional' };
+    const KIND_LABELS = { standard: 'Standard', nerdy: 'Nerdy, but real', fictional: 'Fictional' };
 
     // Sensible starting pair for each category.
     const DEFAULTS = {
-        length: ['meters', 'feet'],
+        length: ['smoots', 'meters'],
         weight: ['kilograms', 'pounds'],
         temperature: ['celsius', 'fahrenheit'],
         volume: ['liters', 'gallons_us'],
-        speed: ['kilometers_per_hour', 'miles_per_hour'],
-        time: ['hours', 'minutes'],
+        speed: ['warp_factor_tng', 'speed_of_light'],
+        time: ['yen', 'years'],
         power: ['kilowatts', 'horsepower'],
         currency: ['galleons', 'knuts'],
         force_sensitivity: ['anakins', 'average_beings'],
     };
 
-    // Curated "Random nerdy conversion" pairs: [category, from, to, value].
-    const RANDOM_PAIRS = [
+    // Curated pairs for "Surprise me": [category, from, to, value].
+    const SURPRISES = [
         ['length', 'parsecs', 'smoots', 12],                  // the Kessel Run, in smoots
         ['length', 'smoots', 'meters', 364.4],                // the Harvard Bridge
         ['length', 'lar', 'smoots', 1],
+        ['length', 'light_years', 'meters', 4.24],            // to Proxima Centauri
         ['length', 'attoparsecs', 'beard_seconds', 1],
         ['time', 'microcenturies', 'minecraft_days', 1],
         ['time', 'yen', 'microcenturies', 1],
@@ -41,11 +41,10 @@ document.addEventListener('DOMContentLoaded', () => {
         ['volume', 'minecraft_blocks', 'cups_us', 1],
         ['currency', 'galleons', 'pounds_sterling_rowling', 100],
         ['force_sensitivity', 'anakins', 'average_beings', 1],
+        ['temperature', 'celsius', 'fahrenheit', -40],
     ];
 
     const state = { category: 'length', from: null, to: null };
-    let lastWarning = '';
-
     const units = () => CATEGORIES[state.category].units;
     const groupName = unit => unit.universe || KIND_LABELS[unit.kind] || 'Other';
 
@@ -53,22 +52,22 @@ document.addEventListener('DOMContentLoaded', () => {
         const text = unitTag(unit);
         if (!text) return null;
         const tag = document.createElement('span');
-        tag.className = 'tag' + (unit.kind === 'nerdy' ? ' tag-nerdy' : '');
+        tag.className = 'tag';
         tag.textContent = text;
         return tag;
     }
 
-    // ---------- Category chips ----------
-    const chips = {};
+    // ---------- Categories ----------
+    const catButtons = {};
     Object.entries(CATEGORIES).forEach(([key, cat]) => {
         const btn = document.createElement('button');
         btn.type = 'button';
-        btn.className = 'chip';
-        btn.textContent = cat.label;
+        btn.className = 'cat';
+        btn.textContent = cat.label.charAt(0) + cat.label.slice(1).toLowerCase();
         btn.setAttribute('aria-pressed', 'false');
         btn.addEventListener('click', () => setCategory(key));
-        chipsEl.appendChild(btn);
-        chips[key] = btn;
+        nav.appendChild(btn);
+        catButtons[key] = btn;
     });
 
     // ---------- Unit picker (searchable listbox) ----------
@@ -76,6 +75,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function createPicker(container, labelId, { getOptions, onSelect }) {
         const id = `picker${++pickerCount}`;
+        const footnote = container.dataset.footnote;
         let value = null;
         let open = false;
         let filtered = [];
@@ -83,9 +83,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         container.innerHTML = `
             <button type="button" class="picker-btn" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="${labelId} ${id}-value">
-                <span class="picker-value" id="${id}-value"></span>
-                <span class="picker-tag"></span>
-                <svg class="picker-caret" width="12" height="8" viewBox="0 0 12 8" aria-hidden="true"><path d="M1 1l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
+                <span class="picker-value" id="${id}-value"></span><span class="footnote-ref" aria-hidden="true">${footnote}</span>
             </button>
             <div class="picker-pop" hidden>
                 <div class="picker-search">
@@ -94,12 +92,11 @@ document.addEventListener('DOMContentLoaded', () => {
                            aria-label="Search units" placeholder="Search units or universes" autocomplete="off" spellcheck="false">
                 </div>
                 <ul class="picker-list" role="listbox" id="${id}-list" aria-labelledby="${labelId}"></ul>
-                <div class="picker-hint" aria-hidden="true"><span>↑↓ move</span><span>Enter select</span><span>Esc close</span></div>
+                <p class="picker-hint" aria-hidden="true">Arrow keys to move, Enter to choose, Esc to close</p>
             </div>`;
 
         const button = container.querySelector('.picker-btn');
         const valueEl = container.querySelector('.picker-value');
-        const tagSlot = container.querySelector('.picker-tag');
         const pop = container.querySelector('.picker-pop');
         const search = container.querySelector('input');
         const list = container.querySelector('.picker-list');
@@ -107,9 +104,6 @@ document.addEventListener('DOMContentLoaded', () => {
         function renderButton() {
             const unit = units()[value];
             valueEl.textContent = unit ? unitLabel(value, unit) : '';
-            tagSlot.innerHTML = '';
-            const tag = unit && makeTag(unit);
-            if (tag) tagSlot.appendChild(tag);
         }
 
         function renderList() {
@@ -126,7 +120,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const empty = document.createElement('li');
                 empty.className = 'picker-empty';
                 empty.setAttribute('role', 'presentation');
-                empty.textContent = 'No matching units in this category.';
+                empty.textContent = 'No units in this category match. Try a universe, like "tolkien".';
                 list.appendChild(empty);
                 search.removeAttribute('aria-activedescendant');
                 return;
@@ -143,7 +137,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     lastGroup = g;
                 }
                 const li = document.createElement('li');
-                li.className = 'picker-option' + (i === active ? ' is-active' : '');
+                li.className = 'picker-option';
                 li.id = `${id}-opt-${i}`;
                 li.setAttribute('role', 'option');
                 li.setAttribute('aria-selected', String(key === value));
@@ -168,8 +162,19 @@ document.addEventListener('DOMContentLoaded', () => {
             const el = document.getElementById(`${id}-opt-${active}`);
             if (el) {
                 search.setAttribute('aria-activedescendant', el.id);
-                el.scrollIntoView({ block: 'nearest' });
+                // Scroll only the list (scrollIntoView would also scroll the page sideways).
+                if (el.offsetTop < list.scrollTop) list.scrollTop = el.offsetTop - 6;
+                else if (el.offsetTop + el.offsetHeight > list.scrollTop + list.clientHeight) list.scrollTop = el.offsetTop + el.offsetHeight - list.clientHeight + 6;
             }
+        }
+
+        // Keep the popover on screen when the picker sits near the right edge.
+        function placePop() {
+            const box = container.getBoundingClientRect();
+            const width = pop.offsetWidth;
+            let left = Math.min(0, (window.innerWidth - 16) - (box.left + width));
+            left = Math.max(left, 16 - box.left);
+            pop.style.left = `${left}px`;
         }
 
         function openPop() {
@@ -179,8 +184,9 @@ document.addEventListener('DOMContentLoaded', () => {
             button.setAttribute('aria-expanded', 'true');
             search.value = '';
             active = -1;
+            placePop();
             renderList();
-            search.focus();
+            search.focus({ preventScroll: true });
         }
 
         function closePop(refocus) {
@@ -218,10 +224,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (open && !container.contains(e.target)) closePop(false);
         });
 
-        return {
-            setValue(key) { value = key; renderButton(); },
-            get value() { return value; },
-        };
+        return { setValue(key) { value = key; renderButton(); } };
     }
 
     const allOptions = () => Object.entries(units()).map(([key, unit]) => ({ key, unit }));
@@ -252,77 +255,75 @@ document.addEventListener('DOMContentLoaded', () => {
     const toBase = (unit, v) => (unit.toBase ? unit.toBase(v) : v * unit.size);
     const fromBase = (unit, b) => (unit.fromBase ? unit.fromBase(b) : b / unit.size);
 
+    let lastSentence = '';
+
+    function sizeInput() {
+        const len = Math.max(2, String(inputValue.value || '').length);
+        inputValue.style.setProperty('--chars', Math.min(len, 14));
+    }
+
     function convert() {
         const u = units();
         const from = u[state.from];
         const to = u[state.to];
         const input = parseFloat(inputValue.value);
-        lastWarning = '';
-        resultSentence.classList.remove('result-warning');
+        sizeInput();
 
-        resultUnit.textContent = to ? unitLabel(state.to, to) : '';
-        if (isNaN(input) || !from || !to) {
-            resultNumber.textContent = '—';
-            resultSentence.textContent = 'Enter a number to convert.';
-            return;
+        const result = !isNaN(input) && from && to ? fromBase(to, toBase(from, input)) : NaN;
+        if (isNaN(input)) {
+            resultEl.textContent = '—';
+            lastSentence = '';
+        } else if (!isFinite(result)) {
+            resultEl.textContent = '—';
+            lastSentence = '';
+        } else {
+            const formatted = formatNumber(result);
+            resultEl.textContent = formatted;
+            lastSentence = `${formatNumber(input)} ${labelFor(input, state.from, from)} = ${formatted} ${labelFor(result, state.to, to)}`;
         }
 
-        const result = fromBase(to, toBase(from, input));
-        if (!isFinite(result)) {
-            lastWarning = from.limit || to.limit || 'That value is out of range for these units.';
-            resultNumber.textContent = '—';
-            resultSentence.textContent = lastWarning;
-            resultSentence.classList.add('result-warning');
-            return;
-        }
-
-        const formatted = formatNumber(result);
-        // Restart the small fade-in animation.
-        resultNumber.style.animation = 'none';
-        void resultNumber.offsetWidth;
-        resultNumber.style.animation = '';
-        resultNumber.textContent = formatted;
-        resultSentence.textContent = `${formatNumber(input)} ${labelFor(input, state.from, from)} = ${formatted} ${labelFor(result, state.to, to)}`;
+        SlideRule.render(ruleEl, {
+            categoryKey: state.category,
+            fromKey: state.from, toKey: state.to,
+            from, to,
+            input: isNaN(input) ? NaN : input,
+            result,
+        });
     }
 
-    // ---------- Unit info ----------
-    function infoItem(key) {
+    // ---------- Footnotes ----------
+    function footnote(num, key) {
         const unit = units()[key];
-        const item = document.createElement('div');
-        item.className = 'info-item';
-        if (!unit) return item;
-
-        const name = document.createElement('div');
-        name.className = 'info-name';
-        name.textContent = unitLabel(key, unit) + ' ';
+        const p = document.createElement('p');
+        p.className = 'footnote';
+        if (!unit) return p;
+        const n = document.createElement('span');
+        n.className = 'footnote-num';
+        n.textContent = num;
+        const name = document.createElement('b');
+        name.textContent = `${unitLabel(key, unit)}.`;
+        p.append(n, name);
         const tag = makeTag(unit);
-        if (tag) name.appendChild(tag);
-
-        const desc = document.createElement('p');
-        desc.className = 'info-desc';
-        desc.textContent = unit.desc + ' ';
+        if (tag) p.appendChild(tag);
+        p.append(` ${unit.desc} `);
         const link = document.createElement('a');
         link.href = unit.source[1];
         link.target = '_blank';
         link.rel = 'noopener';
-        link.textContent = 'Source';
-        link.title = unit.source[0];
-        desc.appendChild(link);
-
-        item.append(name, desc);
-        return item;
+        link.textContent = unit.source[0];
+        p.appendChild(link);
+        return p;
     }
 
-    function updateInfo() {
-        unitInfo.querySelectorAll('.info-item, .info-note').forEach(el => el.remove());
-        unitInfo.appendChild(infoItem(state.from));
-        if (state.to !== state.from) unitInfo.appendChild(infoItem(state.to));
+    function updateSources() {
+        sourcesEl.innerHTML = '';
+        sourcesEl.append(footnote(1, state.from), footnote(2, state.to));
         const note = CATEGORIES[state.category].note;
         if (note) {
             const p = document.createElement('p');
-            p.className = 'info-note';
+            p.className = 'sources-note';
             p.textContent = note;
-            unitInfo.appendChild(p);
+            sourcesEl.appendChild(p);
         }
     }
 
@@ -330,7 +331,7 @@ document.addEventListener('DOMContentLoaded', () => {
         fromPicker.setValue(state.from);
         toPicker.setValue(state.to);
         convert();
-        updateInfo();
+        updateSources();
     }
 
     function setCategory(key, from, to) {
@@ -341,7 +342,7 @@ document.addEventListener('DOMContentLoaded', () => {
         state.from = from && u[from] ? from : (u[defFrom] ? defFrom : keys[0]);
         state.to = to && u[to] ? to : (u[defTo] ? defTo : keys[1]);
         fixToUniverse();
-        Object.entries(chips).forEach(([k, btn]) => btn.setAttribute('aria-pressed', String(k === key)));
+        Object.entries(catButtons).forEach(([k, btn]) => btn.setAttribute('aria-pressed', String(k === key)));
         update();
     }
 
@@ -353,26 +354,29 @@ document.addEventListener('DOMContentLoaded', () => {
         update();
     });
 
-    let lastRandom = -1;
+    let lastSurprise = -1;
     randomButton.addEventListener('click', () => {
         let i;
-        do { i = Math.floor(Math.random() * RANDOM_PAIRS.length); } while (i === lastRandom && RANDOM_PAIRS.length > 1);
-        lastRandom = i;
-        const [cat, from, to, value] = RANDOM_PAIRS[i];
+        do { i = Math.floor(Math.random() * SURPRISES.length); } while (i === lastSurprise && SURPRISES.length > 1);
+        lastSurprise = i;
+        const [cat, from, to, value] = SURPRISES[i];
         inputValue.value = value;
         setCategory(cat, from, to);
     });
 
     copyButton.addEventListener('click', async () => {
-        const text = resultSentence.textContent;
+        if (!lastSentence) {
+            copyStatus.textContent = 'Nothing to copy yet.';
+            return;
+        }
         let ok = false;
         try {
-            await navigator.clipboard.writeText(text);
+            await navigator.clipboard.writeText(lastSentence);
             ok = true;
         } catch (e) {
-            // Fallback for browsers/contexts without the async clipboard API.
+            // Fallback for browsers or pages without the async clipboard API.
             const ta = document.createElement('textarea');
-            ta.value = text;
+            ta.value = lastSentence;
             ta.style.position = 'fixed';
             ta.style.opacity = '0';
             document.body.appendChild(ta);
@@ -380,12 +384,21 @@ document.addEventListener('DOMContentLoaded', () => {
             try { ok = document.execCommand('copy'); } catch (err) { ok = false; }
             ta.remove();
         }
-        copyLabel.textContent = ok ? 'Copied!' : 'Copy failed';
-        setTimeout(() => { copyLabel.textContent = 'Copy'; }, 1500);
+        copyButton.textContent = ok ? 'Copied' : 'Copy failed';
+        copyStatus.textContent = ok ? `Copied: ${lastSentence}` : 'Copy failed.';
+        setTimeout(() => { copyButton.textContent = 'Copy result'; }, 1500);
     });
+
+    // Redraw the rule when its width changes (tick density depends on width).
+    let resizeTimer;
+    new ResizeObserver(() => {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(convert, 80);
+    }).observe(ruleEl.querySelector('.rule-track'));
 
     // ---------- Start ----------
     const total = Object.values(CATEGORIES).reduce((n, c) => n + Object.keys(c.units).length, 0);
-    unitCount.textContent = `${total} units · ${Object.keys(CATEGORIES).length} categories · every one sourced`;
+    unitCount.textContent = `${total} units in ${Object.keys(CATEGORIES).length} categories, each with a cited source.`;
+    inputValue.value = 364.4;
     setCategory('length');
 });

@@ -3,7 +3,8 @@
  * Shared by the converter (index.html) and the reference page (references.html).
  *
  * Each linear unit has a `size`: how many of the category's base unit one of it equals.
- * Non-linear units (temperature scales, warp factors) define toBase/fromBase instead.
+ * Non-linear units (temperature scales, warp factors) define toBase/fromBase instead;
+ * `domain` limits the values a non-linear unit is defined for.
  * Every unit cites a source: [title, url].
  * `kind`: "standard" (real, official), "nerdy" (real but humorous), "fictional" (from a fictional universe).
  * Currency units also have a `universe`: conversions are only allowed within the same universe.
@@ -167,7 +168,7 @@ const CATEGORIES = {
                                      toBase: w => Math.pow(w, 3) * C,
                                      fromBase: v => Math.cbrt(v / C),
                                      desc: "Star Trek (original series scale): speed = warp³ × c, so warp 6 = 216c.", source: SRC.warp },
-            warp_factor_tng:       { tag: "Star Trek", label: "warp factor (TNG scale)", kind: "fictional",
+            warp_factor_tng:       { tag: "Star Trek", label: "warp factor (TNG scale)", domain: [0, 9], domainNote: "TNG formula stops at warp 9", kind: "fictional",
                                      toBase: w => (w >= 0 && w <= 9) ? Math.pow(w, 10 / 3) * C : NaN,
                                      fromBase: v => (v >= 0 && v / C <= Math.pow(9, 10 / 3) + 1e-9) ? Math.pow(v / C, 3 / 10) : NaN,
                                      limit: "The TNG scale only has a formula up to warp 9 (~1,516c); above that it climbs toward infinity at warp 10.",
@@ -239,7 +240,7 @@ const CATEGORIES = {
     },
 };
 
-/** The label chip for a unit: its universe, or "Nerdy" for real-but-humorous units. */
+/** The small label shown with a unit: its universe, or "Nerdy" for real-but-humorous units. */
 function unitTag(unit) {
     return unit.tag || unit.universe || (unit.kind === "nerdy" ? "Nerdy" : "");
 }
