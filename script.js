@@ -21,7 +21,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const copyButton = document.getElementById('copyButton');
     const copyStatus = document.getElementById('copyStatus');
     const randomButton = document.getElementById('randomButton');
-    const unitCount = document.getElementById('unitCount');
 
     /** Group headings in the unit picker, by unit `kind` (currency groups by universe instead). */
     const KIND_LABELS = { standard: 'Standard', nerdy: 'Nerdy, but real', fictional: 'Fictional' };
@@ -121,6 +120,7 @@ document.addEventListener('DOMContentLoaded', () => {
         container.innerHTML = `
             <button type="button" class="picker-btn" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="${labelId} ${id}-value">
                 <span class="picker-value" id="${id}-value"></span><span class="footnote-ref" aria-hidden="true">${footnote}</span>
+                <svg class="picker-caret" viewBox="0 0 12 8" aria-hidden="true"><path d="M1 1.5l5 5 5-5" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </button>
             <div class="picker-pop" hidden>
                 <div class="picker-search">
@@ -456,8 +456,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ---------- Start ----------
     // Open on the Harvard Bridge: 364.4 smoots, the most famous measurement in the collection.
-    const total = Object.values(CATEGORIES).reduce((n, c) => n + Object.keys(c.units).length, 0);
-    unitCount.textContent = `${total} units in ${Object.keys(CATEGORIES).length} categories, each with a cited source.`;
     inputValue.value = 364.4;
     setCategory('length');
 });
