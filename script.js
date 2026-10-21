@@ -1,3 +1,16 @@
+/*
+ * script.js — the converter page (index.html)
+ * ============================================
+ * Wires the page together:
+ *   - category buttons (the ticks along the ruler line under the title)
+ *   - the sentence "[number] [unit] = [result] [unit]", whose two units are searchable pickers
+ *   - the slide rule (drawn by rule.js) and the numbered source footnotes
+ *   - Swap units, Copy result, and "Surprise me with something absurd"
+ *
+ * All unit data comes from units.js; this file never hard-codes a conversion factor.
+ * Everything the page shows is recomputed from `state` by update(), so every control
+ * changes `state` and then calls update() (or convert() when only the number changed).
+ */
 document.addEventListener('DOMContentLoaded', () => {
     const nav = document.getElementById('categoryNav');
     const inputValue = document.getElementById('inputValue');
@@ -10,9 +23,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const randomButton = document.getElementById('randomButton');
     const unitCount = document.getElementById('unitCount');
 
+    /** Group headings in the unit picker, by unit `kind` (currency groups by universe instead). */
     const KIND_LABELS = { standard: 'Standard', nerdy: 'Nerdy, but real', fictional: 'Fictional' };
 
-    // Sensible starting pair for each category.
+    // The pair shown when a category is opened. Where it's sensible, a fun unit leads.
     const DEFAULTS = {
         length: ['smoots', 'meters'],
         weight: ['kilograms', 'pounds'],
@@ -25,7 +39,8 @@ document.addEventListener('DOMContentLoaded', () => {
         force_sensitivity: ['anakins', 'average_beings'],
     };
 
-    // Curated pairs for "Surprise me": [category, from, to, value].
+    // Curated pairs for "Surprise me": [category, from, to, value]. Unit keys must exist in
+    // units.js. Picked at random, never the same one twice in a row.
     const SURPRISES = [
         ['length', 'parsecs', 'smoots', 12],                  // the Kessel Run, in smoots
         ['length', 'smoots', 'meters', 364.4],                // the Harvard Bridge
@@ -44,10 +59,16 @@ document.addEventListener('DOMContentLoaded', () => {
         ['temperature', 'celsius', 'fahrenheit', -40],
     ];
 
+    /** What's being converted: a category key and two unit keys from that category. */
     const state = { category: 'length', from: null, to: null };
+
+    /** The units of the current category, keyed by unit key. */
     const units = () => CATEGORIES[state.category].units;
+
+    /** Which picker group a unit is listed under. */
     const groupName = unit => unit.universe || KIND_LABELS[unit.kind] || 'Other';
 
+    /** A small universe/"Nerdy" label for a unit, or null if it has none (standard units). */
     function makeTag(unit) {
         const text = unitTag(unit);
         if (!text) return null;
@@ -58,6 +79,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ---------- Categories ----------
+    // One button per category. aria-pressed marks the current one (styled as the long red tick).
     const catButtons = {};
     Object.entries(CATEGORIES).forEach(([key, cat]) => {
         const btn = document.createElement('button');
@@ -73,13 +95,28 @@ document.addEventListener('DOMContentLoaded', () => {
     // ---------- Unit picker (searchable listbox) ----------
     let pickerCount = 0;
 
+    /**
+     * Turn an empty element into a unit picker: a button showing the chosen unit that opens a
+     * popover with a search box and a grouped list.
+     *
+     *   container   the element to build into (its data-footnote is shown after the unit name)
+     *   labelId     id of a hidden label naming the picker for screen readers ("From unit")
+     *   getOptions  () => [{ key, unit }] — the units to offer, re-read every time it opens
+     *   onSelect    (key) => void — called when a unit is chosen
+     *
+     * Accessibility: the search box is an ARIA combobox and the list a listbox. Focus stays in
+     * the search box while arrow keys move the highlight (aria-activedescendant), Enter
+     * chooses, and Esc closes and returns focus to the button.
+     *
+     * Returns { setValue(key) } so the page can update the button when state changes elsewhere.
+     */
     function createPicker(container, labelId, { getOptions, onSelect }) {
         const id = `picker${++pickerCount}`;
         const footnote = container.dataset.footnote;
-        let value = null;
-        let open = false;
-        let filtered = [];
-        let active = -1;
+        let value = null;      // chosen unit key
+        let open = false;      // popover showing?
+        let filtered = [];     // options matching the search, in display order
+        let active = -1;       // index into `filtered` of the highlighted option
 
         container.innerHTML = `
             <button type="button" class="picker-btn" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="${labelId} ${id}-value">
@@ -106,6 +143,8 @@ document.addEventListener('DOMContentLoaded', () => {
             valueEl.textContent = unit ? unitLabel(value, unit) : '';
         }
 
+        // Rebuild the list from the search text. Every word typed must appear somewhere in the
+        // unit's name, key, universe or group, so "star" finds Star Trek and Star Wars units.
         function renderList() {
             const words = search.value.toLowerCase().trim().split(/\s+/).filter(Boolean);
             filtered = getOptions().filter(({ key, unit }) => {
@@ -155,6 +194,7 @@ document.addEventListener('DOMContentLoaded', () => {
             highlight();
         }
 
+        // Show which option is highlighted and keep it scrolled into view.
         function highlight() {
             list.querySelectorAll('.picker-option').forEach(li => {
                 li.classList.toggle('is-active', li.id === `${id}-opt-${active}`);
@@ -168,7 +208,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        // Keep the popover on screen when the picker sits near the right edge.
+        // Keep the popover on screen: shift it left when the picker sits near the right edge
+        // (common for the "to" unit), but never past a 16px margin on the left.
         function placePop() {
             const box = container.getBoundingClientRect();
             const width = pop.offsetWidth;
@@ -183,10 +224,10 @@ document.addEventListener('DOMContentLoaded', () => {
             pop.hidden = false;
             button.setAttribute('aria-expanded', 'true');
             search.value = '';
-            active = -1;
+            active = -1;           // renderList() then highlights the current unit
             placePop();
             renderList();
-            search.focus({ preventScroll: true });
+            search.focus({ preventScroll: true });   // don't let focusing scroll the page
         }
 
         function closePop(refocus) {
@@ -220,6 +261,7 @@ document.addEventListener('DOMContentLoaded', () => {
             else if (e.key === 'Escape') { e.preventDefault(); closePop(true); }
             else if (e.key === 'Tab') { closePop(false); }
         });
+        // Clicking anywhere outside the picker closes it.
         document.addEventListener('mousedown', e => {
             if (open && !container.contains(e.target)) closePop(false);
         });
@@ -243,6 +285,8 @@ document.addEventListener('DOMContentLoaded', () => {
         onSelect: key => { state.to = key; update(); },
     });
 
+    // If "from" is a currency from a different universe than "to", move "to" to the first other
+    // coin of the same universe (there's no exchange rate between, say, Galleons and caps).
     function fixToUniverse() {
         const u = units();
         const universe = u[state.from]?.universe;
@@ -252,16 +296,22 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ---------- Conversion ----------
+    // Every conversion goes through the category's base unit: from → base → to. Linear units
+    // multiply by `size`; non-linear ones (temperature, warp) supply toBase/fromBase.
     const toBase = (unit, v) => (unit.toBase ? unit.toBase(v) : v * unit.size);
     const fromBase = (unit, b) => (unit.fromBase ? unit.fromBase(b) : b / unit.size);
 
+    /** The current result as a sentence, e.g. "1 smoot = 1.7018 meters" (what Copy copies). */
     let lastSentence = '';
 
+    // Grow the number box with what's typed, so the sentence stays tight (max 14 characters).
     function sizeInput() {
         const len = Math.max(2, String(inputValue.value || '').length);
         inputValue.style.setProperty('--chars', Math.min(len, 14));
     }
 
+    // Recompute the result and redraw the rule. A result of NaN/Infinity means the conversion
+    // has no answer (e.g. TNG warp above 9): show a dash and let the rule explain why.
     function convert() {
         const u = units();
         const from = u[state.from];
@@ -292,6 +342,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ---------- Footnotes ----------
+    // Footnote 1 is the "from" unit and 2 the "to" unit, matching the superscripts in the
+    // sentence. Each gives the unit's description and links its source.
     function footnote(num, key) {
         const unit = units()[key];
         const p = document.createElement('p');
@@ -327,6 +379,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Bring the whole page in line with `state`.
     function update() {
         fromPicker.setValue(state.from);
         toPicker.setValue(state.to);
@@ -334,6 +387,8 @@ document.addEventListener('DOMContentLoaded', () => {
         updateSources();
     }
 
+    // Switch category. `from`/`to` are optional unit keys (used by "Surprise me"); otherwise
+    // the category's DEFAULTS pair is used, falling back to its first two units.
     function setCategory(key, from, to) {
         state.category = key;
         const u = units();
@@ -364,6 +419,8 @@ document.addEventListener('DOMContentLoaded', () => {
         setCategory(cat, from, to);
     });
 
+    // Copy the result sentence. The button briefly says "Copied", and a hidden live region
+    // (#copyStatus) announces it to screen readers.
     copyButton.addEventListener('click', async () => {
         if (!lastSentence) {
             copyStatus.textContent = 'Nothing to copy yet.';
@@ -389,7 +446,8 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => { copyButton.textContent = 'Copy result'; }, 1500);
     });
 
-    // Redraw the rule when its width changes (tick density depends on width).
+    // Redraw the rule when its width changes: how many ticks and labels fit depends on width.
+    // Debounced so dragging a window edge doesn't redraw on every pixel.
     let resizeTimer;
     new ResizeObserver(() => {
         clearTimeout(resizeTimer);
@@ -397,6 +455,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }).observe(ruleEl.querySelector('.rule-track'));
 
     // ---------- Start ----------
+    // Open on the Harvard Bridge: 364.4 smoots, the most famous measurement in the collection.
     const total = Object.values(CATEGORIES).reduce((n, c) => n + Object.keys(c.units).length, 0);
     unitCount.textContent = `${total} units in ${Object.keys(CATEGORIES).length} categories, each with a cited source.`;
     inputValue.value = 364.4;

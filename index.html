@@ -9,6 +9,11 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+    <!--
+        The converter. Most of the page is filled in by script.js from the data in units.js:
+        the category buttons, both unit pickers, the result, the slide rule's ticks (rule.js)
+        and the source footnotes. Script order matters: units.js, then rule.js, then script.js.
+    -->
     <div class="page">
         <header class="masthead">
             <div class="masthead-title">
@@ -23,9 +28,11 @@
             </button>
         </header>
 
+        <!-- Categories: one button per category, drawn as ticks along a ruler line. -->
         <nav class="cat-rule" id="categoryNav" aria-label="Categories"></nav>
 
         <section class="converter" aria-label="Converter">
+            <!-- The sentence: "[number] [unit]¹ = [result] [unit]²". The superscripts point to the footnotes. -->
             <div class="sentence">
                 <span class="sentence-part">
                     <label for="inputValue" class="visually-hidden">Number to convert</label>
@@ -41,6 +48,7 @@
                 </span>
             </div>
 
+            <!-- The slide rule. Hidden from screen readers (the sentence says it all); the caption explains it. -->
             <figure class="rule" id="rule" aria-label="Slide rule comparing the two units">
                 <div class="rule-face">
                     <div class="rule-edge rule-edge-top" data-rule-top-name></div>
@@ -64,6 +72,7 @@
             <p class="visually-hidden" id="copyStatus" role="status"></p>
         </section>
 
+        <!-- Footnotes 1 and 2: description and source for each unit in the sentence. -->
         <section class="sources" id="sources" aria-label="Sources for these units"></section>
 
         <footer class="site-footer">
