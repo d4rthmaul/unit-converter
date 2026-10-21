@@ -363,11 +363,244 @@ h1::before {
     .unit-select {
         flex: 1 1 100%;
         order: -1;
+        min-width: 0;
+        width: 100%;
     }
     .value-input {
         flex: 1;
     }
     .swap-btn {
         width: 100%;
+    }
+}
+
+
+/* === UNIT INFO DETAILS === */
+.unit-info + .unit-info {
+    margin-top: 0.4rem;
+}
+
+.unit-info strong {
+    color: var(--text-primary);
+    font-weight: 400;
+}
+
+.tooltip a,
+.ref-table a,
+.page-nav a {
+    color: var(--accent);
+    text-decoration: none;
+    border-bottom: 1px dotted var(--accent-dim);
+}
+
+.tooltip a:hover,
+.ref-table a:hover,
+.page-nav a:hover {
+    border-bottom-style: solid;
+    text-shadow: var(--glow-green);
+}
+
+.unit-note {
+    margin-top: 0.6rem;
+    padding-top: 0.5rem;
+    border-top: 1px dashed var(--border-dim);
+    color: var(--text-muted);
+}
+
+.unit-warning {
+    color: var(--accent-hot);
+}
+
+optgroup {
+    color: var(--text-muted);
+    font-style: normal;
+}
+
+optgroup option {
+    color: var(--text-primary);
+}
+
+/* === PAGE NAV === */
+.page-nav {
+    margin-top: 1.5rem;
+    text-align: right;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    letter-spacing: 1px;
+}
+
+.page-nav-top {
+    margin: 0 0 1.5rem;
+    text-align: left;
+}
+
+/* === REFERENCES PAGE === */
+.container-wide {
+    max-width: 1080px;
+}
+
+.h1-refs {
+    font-size: 3rem;
+}
+
+.ref-controls {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+}
+
+.filter-btn {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 6px 12px;
+    border: 1px solid var(--border-dim);
+    border-radius: 2px;
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.filter-btn:hover {
+    border-color: var(--border-glow);
+    color: var(--accent);
+}
+
+.filter-btn.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--bg-deep);
+}
+
+.ref-jump {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 14px;
+    margin-bottom: 2rem;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+}
+
+.ref-jump a {
+    color: var(--text-secondary);
+    text-decoration: none;
+}
+
+.ref-jump a:hover {
+    color: var(--accent);
+}
+
+.ref-section {
+    margin-bottom: 2.5rem;
+    scroll-margin-top: 1rem;
+}
+
+.ref-section h2 {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: 2rem;
+    letter-spacing: 2px;
+    color: var(--accent);
+    margin-bottom: 0.5rem;
+}
+
+.ref-note {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    margin-bottom: 0.75rem;
+}
+
+.table-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--border-dim);
+    border-radius: 2px;
+    background: var(--bg-inset);
+}
+
+.ref-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.82rem;
+}
+
+.ref-table th {
+    text-align: left;
+    font-family: var(--font-mono);
+    font-weight: 400;
+    font-size: 0.68rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    padding: 0.6rem 0.75rem;
+    border-bottom: 1px solid var(--border-dim);
+}
+
+.ref-table td {
+    padding: 0.6rem 0.75rem;
+    vertical-align: top;
+    color: var(--text-secondary);
+    border-bottom: 1px solid rgba(0, 200, 150, 0.07);
+}
+
+.ref-table tr:last-child td {
+    border-bottom: none;
+}
+
+.ref-unit {
+    color: var(--text-primary) !important;
+    font-family: var(--font-mono);
+    white-space: nowrap;
+}
+
+.ref-value {
+    font-family: var(--font-mono);
+    color: var(--accent) !important;
+    white-space: nowrap;
+}
+
+.badge {
+    display: inline-block;
+    margin-left: 0.5rem;
+    padding: 0 0.35rem;
+    font-size: 0.6rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    border: 1px solid currentColor;
+    border-radius: 2px;
+    vertical-align: middle;
+}
+
+.badge-standard  { color: var(--text-muted); }
+.badge-nerdy     { color: #e0b84a; }
+.badge-fictional { color: var(--accent-hot); }
+
+@media (max-width: 720px) {
+    .ref-table thead {
+        display: none;
+    }
+    .ref-table,
+    .ref-table tbody,
+    .ref-table tr,
+    .ref-table td {
+        display: block;
+        width: 100%;
+    }
+    .ref-table tr {
+        padding: 0.6rem 0;
+        border-bottom: 1px solid var(--border-dim);
+    }
+    .ref-table td {
+        border: none;
+        padding: 0.15rem 0.75rem;
+    }
+    .ref-unit,
+    .ref-value {
+        white-space: normal;
+    }
+    .h1-refs {
+        font-size: 2.4rem;
     }
 }
