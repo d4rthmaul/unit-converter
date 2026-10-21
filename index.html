@@ -10,32 +10,32 @@
     <div class="container">
         <h1>Nerdy Unit Converter</h1>
         <div class="intro-note">
-            <p>Welcome to the Dimensional Analysis Machine! (That's fancy talk for "unit converter".) Convert between standard units like meters, kilograms, and liters — or venture into fictional dimensions with units from your favorite sci-fi and fantasy universes. Nuka-Cola caps, D&amp;D gold pieces, dilithium crystals, and more. Select a category, enter a value, and initiate conversion.</p>
+            <p>Welcome to the Dimensional Analysis Machine! (That's fancy talk for "unit converter".) Convert between standard units like meters, kilograms, and liters — or venture into fictional dimensions with units from your favorite sci-fi and fantasy universes: D&amp;D gold pieces, Galleons, warp factors, Elvish long years, and even midi-chlorians. Select a category, enter a value, and initiate conversion.</p>
         </div>
-        
+
         <div class="converter-box">
-            <select id="category" class="category-select">
-                <option value="length">Length</option>
-                <option value="weight">Weight</option>
-                <option value="temperature">Temperature</option>
-                <option value="volume">Volume</option>
-            </select>
+            <select id="category" class="category-select" aria-label="Category"></select>
 
             <div class="input-group">
-                <input type="number" id="inputValue" placeholder="Enter value" class="value-input">
-                <select id="fromUnit" class="unit-select"></select>
-                <button id="swapButton" class="swap-btn">↔</button>
+                <input type="number" id="inputValue" placeholder="Enter value" class="value-input" aria-label="Value to convert" value="1">
+                <select id="fromUnit" class="unit-select" aria-label="From unit"></select>
+                <button id="swapButton" class="swap-btn" aria-label="Swap units">↔</button>
             </div>
 
             <div class="equals">=</div>
 
             <div class="input-group">
-                <input type="number" id="outputValue" readonly class="value-input">
-                <select id="toUnit" class="unit-select"></select>
+                <input type="text" id="outputValue" readonly class="value-input" aria-label="Result">
+                <select id="toUnit" class="unit-select" aria-label="To unit"></select>
             </div>
         </div>
-        <div id="unitTooltip" class="tooltip">Loading units...</div> <!-- Default text -->
+        <div id="unitTooltip" class="tooltip" aria-live="polite">Loading units...</div>
+
+        <nav class="page-nav">
+            <a href="references.html">View all units &amp; sources →</a>
+        </nav>
     </div>
+    <script src="units.js"></script>
     <script src="script.js"></script>
 </body>
 </html>

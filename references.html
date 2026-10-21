@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Units &amp; Sources · Nerdy Unit Converter</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container container-wide">
+        <nav class="page-nav page-nav-top">
+            <a href="index.html">← Back to the converter</a>
+        </nav>
+
+        <h1 class="h1-refs">Units &amp; Sources</h1>
+        <div class="intro-note">
+            <p>Every unit in the converter, what it's worth, and where the number comes from. Standard units follow official definitions (mostly NIST). Fictional units cite canon sources or fan wikis that quote canon; where a universe never pins a number down, the note says what assumption was made.</p>
+        </div>
+
+        <div class="ref-controls" role="group" aria-label="Filter units">
+            <button class="filter-btn active" data-kind="all">All</button>
+            <button class="filter-btn" data-kind="standard">Standard</button>
+            <button class="filter-btn" data-kind="nerdy">Nerdy</button>
+            <button class="filter-btn" data-kind="fictional">Fictional</button>
+        </div>
+
+        <div class="ref-jump" id="refJump"></div>
+        <div id="refBody"></div>
+    </div>
+
+    <script src="units.js"></script>
+    <script>
+        const KIND_LABELS = { standard: 'Standard', nerdy: 'Nerdy', fictional: 'Fictional' };
+        const body = document.getElementById('refBody');
+        const jump = document.getElementById('refJump');
+
+        function valueText(unit, cat) {
+            if (!unit.size) return 'Formula — see notes';
+            if (cat.base === '(per universe)') return '';
+            return `${formatNumber(unit.size)} ${cat.base}`;
+        }
+
+        Object.entries(CATEGORIES).forEach(([catKey, cat]) => {
+            const link = document.createElement('a');
+            link.href = `#${catKey}`;
+            link.textContent = cat.label;
+            jump.appendChild(link);
+
+            const section = document.createElement('section');
+            section.className = 'ref-section';
+            section.id = catKey;
+
+            const h2 = document.createElement('h2');
+            h2.textContent = cat.label;
+            section.appendChild(h2);
+
+            if (cat.note) {
+                const note = document.createElement('p');
+                note.className = 'ref-note';
+                note.textContent = cat.note;
+                section.appendChild(note);
+            }
+
+            const wrap = document.createElement('div');
+            wrap.className = 'table-wrap';
+            const table = document.createElement('table');
+            table.className = 'ref-table';
+            const isCurrency = cat.base === '(per universe)';
+            table.innerHTML = `<thead><tr><th>Unit</th><th>${isCurrency ? 'Universe' : 'Equals'}</th><th>Notes</th><th>Source</th></tr></thead>`;
+            const tbody = document.createElement('tbody');
+
+            Object.entries(cat.units).forEach(([key, unit]) => {
+                const tr = document.createElement('tr');
+                tr.dataset.kind = unit.kind;
+
+                const name = document.createElement('td');
+                name.className = 'ref-unit';
+                name.textContent = unitLabel(key, unit);
+                const badge = document.createElement('span');
+                badge.className = `badge badge-${unit.kind}`;
+                badge.textContent = KIND_LABELS[unit.kind];
+                name.appendChild(badge);
+
+                const val = document.createElement('td');
+                val.className = 'ref-value';
+                val.textContent = isCurrency ? unit.universe : valueText(unit, cat);
+
+                const desc = document.createElement('td');
+                desc.textContent = unit.desc;
+
+                const src = document.createElement('td');
+                const a = document.createElement('a');
+                a.href = unit.source[1];
+                a.target = '_blank';
+                a.rel = 'noopener';
+                a.textContent = unit.source[0];
+                src.appendChild(a);
+
+                tr.append(name, val, desc, src);
+                tbody.appendChild(tr);
+            });
+
+            table.appendChild(tbody);
+            wrap.appendChild(table);
+            section.appendChild(wrap);
+            body.appendChild(section);
+        });
+
+        // Filter buttons
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.toggle('active', b === btn));
+                const kind = btn.dataset.kind;
+                document.querySelectorAll('.ref-table tbody tr').forEach(tr => {
+                    tr.hidden = kind !== 'all' && tr.dataset.kind !== kind;
+                });
+                document.querySelectorAll('.ref-section').forEach(sec => {
+                    sec.hidden = ![...sec.querySelectorAll('tbody tr')].some(tr => !tr.hidden);
+                });
+            });
+        });
+    </script>
+</body>
+</html>
